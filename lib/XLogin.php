@@ -9,6 +9,7 @@ namespace PL2010\WordPress;
 use PL2010\WordPress\OAuth2\YahooProvider;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\Facebook;
 use League\OAuth2\Client\Provider\Google;
 
@@ -26,9 +27,8 @@ use Exception;
  * user. The flow of external login is typically as follows:
  *
  *  1) PHP code calls {@link getStartUrl()} for an URL to start external
- *     login webflow, which by default points to 'start.php' (configurable
- *     via {@link $START_RELATIVE_URI}). This start link is rendered on
- *     the login page 'wp-login.php'.
+ *     login webflow. This start link is rendered on the login page
+ *     'wp-login.php'.
  *
  *  2) User clicks the start link, which causes the plugin to call
  *     {@link launchLoginFlow()} for a URL to redirect the client
@@ -38,11 +38,10 @@ use Exception;
  *  3) The external service is expected to send authentication result
  *     (be it success or failure) back to the plugin. That typically
  *     is done with a browser redirect. The plugin receives the result
- *     with 'recv.php' (configurable via {@link $RECV_RELATIVE_URI}),
- *     and calls {@link recvLoginCredential()}. For successful
- *     authentication, the external user is mapped to a WordPress user,
- *     and the user ID is stashed in the webflow session. The client is
- *     then redirected back to the login page.
+ *     (with 'recv.php') and calls {@link recvLoginCredential()}. For
+ *     successful authentication, the external user is mapped to a
+ *     WordPress user, and the user ID is stashed in the webflow session.
+ *     The client is then redirected back to the login page.
  *
  *  4) The login page detects that authentication has already been
  *     complete, and submit the login request immediately. The plugin
@@ -76,12 +75,6 @@ class XLogin /*{{{*/
 	/** Version number. */
 	const VERSION = '1.0';
 
-	/** @var string URI to start login flow, relative to plugin dir. */
-	public static $START_RELATIVE_URI = 'start.php';
-
-	/** @var string URI to receive login result, relative to plugin dir. */
-	public static $RECV_RELATIVE_URI = 'recv.php';
-
 	/** @var string Facebook Graph API version to request. */
 	public static $FACEBOOK_GRAPH_API_VERS = 'v3.3';
 
@@ -91,7 +84,7 @@ class XLogin /*{{{*/
 	/** @var string Name of the service. */
 	private $name;
 
-	/** @var string Base URL of the plugin directory. */
+	/** @var string Base URL of the plugin directory; ends with '/'. */
 	private $url_base;
 
 	/** @var callback Debug logger taking an message. */
@@ -127,61 +120,6 @@ class XLogin /*{{{*/
 	} /*}}}*/
 
 	/**
-	 * Get the value of a webflow attribute.
-	 *
-	 * @param string $n Attribute name, unscoped.
-	 * @return mixed $v Attribute value.
-	 */
-	protected function attrFlowGet($n) /*{{{*/
-	{
-		$n = $this->getScopedAttrName($n);
-		if ($this->wf_get)
-			return call_user_func($this->wf_get, $n);
-
-		if (!$this->sess_init) {
-			if (!session_start()) {
-				$this->setError('session-start-error');
-				return null;
-			}
-			$this->sess_init = true;
-		}
-		return $_SESSION[$n] ?? null;
-	} /*}}}*/
-
-	/**
-	 * Set the value of a webflow attribute.
-	 *
-	 * @param string $n Attribute name, unscoped.
-	 * @param mixed $v Attribute value; null to unset the attribute.
-	 * @return boolean True if set successful.
-	 */
-	protected function attrFlowSet($n, $v) /*{{{*/
-	{
-		$n = $this->getScopedAttrName($n);
-		if ($this->wf_set) {
-			if (call_user_func($this->wf_set, $n, $v))
-				return true;
-			$this->setError('session-error');
-			return false;
-		}
-
-		if (!$this->sess_init) {
-			if (!session_start()) {
-				$this->setError('session-start-error');
-				return false;
-			}
-			$this->sess_init = true;
-		}
-		if ($v !== null)
-			$_SESSION[$n] = $v;
-		else {
-			if (isset($_SESSION[$n]))
-				unset($_SESSION[$n]);
-		}
-		return true;
-	} /*}}}*/
-
-	/**
 	 * Provide callback for accessing webflow attributes.
 	 *
 	 * By default, PHP session mechanism (session_start(), $_SESSION, etc.)
@@ -191,7 +129,7 @@ class XLogin /*{{{*/
 	 * to indicate success/failure.
 	 *
 	 * Alternatively one may define a subclass and override methods
-	 * {@link attrFlowGet()} and {@link attrFlowSet()}.
+	 * {@link flowAttrGet()} and {@link flowAttrSet()}.
 	 *
 	 * @param callback $getter Callback to retrieve attribute.
 	 * @param callback $setter Callback to update attribute.
@@ -315,6 +253,114 @@ class XLogin /*{{{*/
 	} /*}}}*/
 
 	/**
+	 * Get the value of a webflow attribute.
+	 *
+	 * @param string $n Attribute name, unscoped.
+	 * @return mixed $v Attribute value.
+	 */
+	protected function flowAttrGet($n) /*{{{*/
+	{
+		$n = $this->getScopedAttrName($n);
+		if ($this->wf_get)
+			return call_user_func($this->wf_get, $n);
+
+		if (!$this->sess_init) {
+			if (!session_start()) {
+				$this->setError('session-start-error');
+				return null;
+			}
+			$this->sess_init = true;
+		}
+		return $_SESSION[$n] ?? null;
+	} /*}}}*/
+
+	/**
+	 * Set the value of a webflow attribute.
+	 *
+	 * @param string $n Attribute name, unscoped.
+	 * @param mixed $v Attribute value; null to unset the attribute.
+	 * @return boolean True if set successful.
+	 */
+	protected function flowAttrSet($n, $v) /*{{{*/
+	{
+		$n = $this->getScopedAttrName($n);
+		if ($this->wf_set) {
+			if (call_user_func($this->wf_set, $n, $v))
+				return true;
+			$this->setError('session-error');
+			return false;
+		}
+
+		if (!$this->sess_init) {
+			if (!session_start()) {
+				$this->setError('session-start-error');
+				return false;
+			}
+			$this->sess_init = true;
+		}
+		if ($v !== null)
+			$_SESSION[$n] = $v;
+		else {
+			if (isset($_SESSION[$n]))
+				unset($_SESSION[$n]);
+		}
+		return true;
+	} /*}}}*/
+
+	/**
+	 * Get webflow error.
+	 * 
+	 * @param boolean $clear Clear error afterwards.
+	 * @return array Tuple of error label and text.
+	 */
+	public function flowErrorGet($clear=false) /*{{{*/
+	{
+		if ($error = $this->flowAttrGet('flow-error')) {
+			if ($clear)
+				$this->flowAttrSet('flow-error', null);
+			return $error;
+		}
+		return [ null, null ];
+	} /*}}}*/
+
+	/**
+	 * Receive error from webflow.
+	 * 
+	 * @param string $error Error code/label from external login service.
+	 * @param string $etext Error text message from external login service.
+	 * @return array Tuple of XLogin error code and message.
+	 */
+	public function flowErrorRecv($error, $etext) /*{{{*/
+	{
+		// Don't expect anything funny in error code/label.
+		$error = preg_replace('/[^.A-Za-z0-9_\-]/', '', $error);
+
+		// Error message could generally be anything text, but let's
+		// say it shouldn't be longer than certain length.
+		$etext = wp_check_invalid_utf8(substr($etext, 0, 80), $strip=true);
+
+		return [
+			$error,
+			$etext,
+		];
+	} /*}}}*/
+
+	/**
+	 * Set webflow error.
+	 * Error information is saved to webflow session.
+	 * 
+	 * @param string $error Error code/label; null to clear error.
+	 * @param string $etext Error text message.
+	 */
+	public function flowErrorSet($error, $etext) /*{{{*/
+	{
+		$this->flowAttrSet('flow-error', [
+			$error,
+			$etext,
+		]);
+	} /*}}}*/
+
+	/**
 	 * Get configuration of an authentication type.
 	 * @param string $type Authentication type, e.g. 'google'.
 	 * @param boolean $enabled If set, the auth type must be enabled.
@@ -416,12 +462,12 @@ class XLogin /*{{{*/
 	{
 		$this->logDebug("getAuthenticated(): type=$type name=$name");
 
-		if (!($xu = $this->attrFlowGet("$type-xuser")))
+		if (!($xu = $this->flowAttrGet("$type-xuser")))
 			return null;
 		assert($xu['xtype'] == $type);
 
 		if ($clear)
-			$this->attrFlowSet("$type-xuser", null);
+			$this->flowAttrSet("$type-xuser", null);
 
 		$user = null;
 		switch ($type) {
@@ -452,6 +498,88 @@ class XLogin /*{{{*/
 			$this->xu_cache[$user->ID] = $xu;
 		}
 		return $user;
+	} /*}}}*/
+
+	/**
+	 * Get callback name from request URI.
+	 * @param string $uri Request URI.
+	 * @param string &$type Login type extracted from URI.
+	 * @return string Callback name, or null.
+	 */
+	public function getCallbackByUri($uri, &$type=null) /*{{{*/
+	{
+		$type = null;
+
+		$reqpath = parse_url($uri, PHP_URL_PATH);
+
+		$prefix = $this->getCallbackPathPrefix();
+		$pfxlen = strlen($prefix);
+		if (substr($reqpath, 0, $pfxlen) != $prefix)
+			return null;
+
+		$suffix = substr($reqpath, $pfxlen);
+		$pieces = explode('/', $suffix, 3);
+		$callbk = reset($pieces);
+		switch ($callbk) {
+		case 'recv':
+		case 'start':
+			if (count($pieces) > 1)
+				$type = $pieces[1];
+			return $callbk;
+		default:
+			return null;
+		}
+	} /*}}}*/
+
+	/**
+	 * Get URI path prefix for callback.
+	 * The path prefix is common to all callback URIs; it starts and ends '/'.
+	 * @return string Callback URI path, or common prefix if $cb not given.
+	 */
+	protected function getCallbackPathPrefix() /*{{{*/
+	{
+		return parse_url($this->url_base, PHP_URL_PATH)
+			. $this->getCallbackPathRelative();
+	} /*}}}*/
+
+	/**
+	 * Get callback URI path relative to plugin base.
+	 * The relative path does not start with '/'. If $cb is empty, this
+	 * yields a prefix ending with '/'.
+	 * @param string $cb Callback name, e.g. 'recv'.
+	 * @param string $type Login type, e.g. 'google'.
+	 * @return string Callback relative URI path.
+	 */
+	protected function getCallbackPathRelative($cb=null, $type=null) /*{{{*/
+	{
+		$path = 'callback/';
+		if ($cb != '') {
+			$path .= $cb;
+			if ($type != '')
+				$path .= "/$type";
+		}
+		return $path;
+	} /*}}}*/
+
+	/**
+	 * Get URI for callback.
+	 * Callback paths are specific to callback name and external login type.
+	 * @param string $cb Callback name, e.g. 'recv'.
+	 * @param string $type Login type, e.g. 'google'.
+	 * @return string Callback URI, or common prefix if $cb not given.
+	 */
+	public function getCallbackUri($cb, $type) /*{{{*/
+	{
+		// Allow OAuth2 redirect_uri to override 'recv'.
+		if  ($cb == 'recv' && $this->getLoginModel($type) == 'oauth2') {
+			$config = $this->getAuthConfig($type);
+			$redir = $config['redirect_uri'] ?? null;
+			if ($redir != '')
+				return $redir;
+		}
+
+		$uri = $this->url_base.$this->getCallbackPathRelative($cb, $type);
+		return $uri;
 	} /*}}}*/
 
 	/**
@@ -605,7 +733,7 @@ class XLogin /*{{{*/
 			break;
 		default:
 			// This should not happen.
-			$this->setError('system_error', 'Unknown OAuth2 type.');
+			$this->setError('server_error', 'Unknown OAuth2 type.');
 			return null;
 		}
 
@@ -620,7 +748,15 @@ class XLogin /*{{{*/
 	 */
 	protected function getOAuth2UserInfo($provider, $token) /*{{{*/
 	{
-		if (!($user = $provider->getResourceOwner($token))) {
+		try {
+			$user = $provider->getResourceOwner($token);
+		}
+		catch (IdentityProviderException $ex) {
+		//	$this->logDebug("OAuth2 exception: $ex");
+			error_log("OAuth2 exception: $ex");
+			$user = null;
+		}
+		if (!$user) {
 			$this->setError('invalid_grant', 'Failed to obtain user info.');
 			return null;
 		}
@@ -630,19 +766,29 @@ class XLogin /*{{{*/
 			|| $provider instanceof YahooProvider
 		) {
 			$email = $user->getEmail();
+			if ($email != '') {
+				$email = static::sanitizeXUserAlias('email', $email);
+				if ($email instanceof WP_Error) {
+					$this->setError(
+						'server_error',
+						'Invalid email from external login service.'
+					);
+					return null;
+				}
+			}
 			return [
-				'name' => $this->getUserDisplayName(
+				'name' => sanitize_text_field($this->getUserDisplayName(
 					$user->getLastName(),
 					$user->getFirstName(),
 					$user->getLocale()
-				),
+				)),
 				'email' => $email,
 				'xhash' => static::getXUserHash('email', $email),
 			];
 		}
 
 		// This should not happen.
-		$this->setError('system_error', 'Unknown OAuth2 provider.');
+		$this->setError('server_error', 'Unknown OAuth2 provider.');
 		return null;
 	} /*}}}*/
 
@@ -696,11 +842,9 @@ class XLogin /*{{{*/
 	 * @param string $type Login type, e.g. 'google'.
 	 * @return string
 	 */
-	public function getRedirectUrl($type) /*{{{*/
+	protected function getRedirectUrl($type) /*{{{*/
 	{
-		$config = $this->getAuthConfig($type);
-		return $config['redirect_uri']
-			?? $this->url_base.static::$RECV_RELATIVE_URI.'/'.urlencode($type);
+		return $this->getCallbackUri('recv', $type);
 	} /*}}}*/
 
 	/**
@@ -721,11 +865,12 @@ class XLogin /*{{{*/
 	 */
 	public function getStartUrl($type, $redir=null) /*{{{*/
 	{
-		$url = $this->url_base
-			. static::$START_RELATIVE_URI
-			. '/' . urlencode($type);
-		if ($redir != null)
-			$url .= '?redir='.urlencode($redir);
+		$url = $this->getCallbackUri('start', $type);
+		if ($redir != '') {
+			$url = add_query_arg([
+				'redir' => $redir,
+			], $url);
+		}
 		return $url;
 	} /*}}}*/
 
@@ -769,7 +914,9 @@ class XLogin /*{{{*/
 
 	/**
 	 * Get hash of external user alias.
-	 * The hash is an obfuscated identify of the user.
+	 * The hash is an obfuscated identify of the user. The input $type
+	 * and $name are assumed to be valid, e.g. having passed
+	 * {@link sanitizeXUserAlias()}.
 	 * @param string $type Type of alias, e.g. 'email'.
 	 * @param string $name External user alias.
 	 * @param string &$obscure Obscured alias is returned if not empty.
@@ -954,9 +1101,9 @@ class XLogin /*{{{*/
 			'scope' => $scope,
 		]);
 		$state = $provider->getState();
-		if (!$this->attrFlowSet("$type.oauth2-state", $state))
+		if (!$this->flowAttrSet("$type.oauth2-state", $state))
 			return null;
-		if (!$this->attrFlowSet("$type.oauth2-redir", $redir))
+		if (!$this->flowAttrSet("$type.oauth2-redir", $redir))
 			return null;
 		return $authzUrl;
 	} /*}}}*/
@@ -1003,11 +1150,9 @@ class XLogin /*{{{*/
 			return null;
 		}
 
-		// TODO: configurable login URL
-		$url = get_site_url(null, '/wp-login.php', 'login');
-		$url .= '?pl2010_xauth='.urlencode($type);
-		if ($target != '')
-			$url .= '&redirect_to='.urlencode($target);
+		$url = add_query_arg([
+			'pl2010_xauth' => $type,
+		], wp_login_url($target));
 		return $url;
 	} /*}}}*/
 
@@ -1028,15 +1173,22 @@ class XLogin /*{{{*/
 			$this->setError('invalid_request', 'Missing state.');
 			return null;
 		}
-		if ($state != $this->attrFlowGet("$type.oauth2-state")) {
+		if ($state != $this->flowAttrGet("$type.oauth2-state")) {
 			$this->setError('invalid_request', 'Invalid state.');
 			return null;
 		}
-		$redir = $this->attrFlowGet("$type.oauth2-redir");
+		$redir = $this->flowAttrGet("$type.oauth2-redir");
 
-		$token = $provider->getAccessToken('authorization_code', [
-			'code' => $code,
-		]);
+		try {
+			$token = $provider->getAccessToken('authorization_code', [
+				'code' => $code,
+			]);
+		}
+		catch (IdentityProviderException $ex) {
+		//	$this->logDebug("OAuth2 exception: $ex");
+			error_log("OAuth2 exception: $ex");
+			$token = null;
+		}
 		if ($token == '') {
 			$this->setError('invalid_grant', 'Failed to obtain token.');
 			return null;
@@ -1049,12 +1201,14 @@ class XLogin /*{{{*/
 
 		// Verify that OAuth2 user is recognized WP users.
 		// Resolve user by email only if the provider is unrestricted.
-		$email = $xu['email'];
+		$email = $xu['email'] ?? null;
+		if (!$email)
+			return null;
 		$user = ($config['restricted'] ?? false)
 			? null
 			: get_user_by('email', $email);
 		if (!$user)
-			$user = $this->resolveUserByExternalAlias('email', $email);
+			$user = $this->resolveXUserByAlias('email', $email);
 		if (!$user) {
 			$this->setError(
 				'unknown-user',
@@ -1069,7 +1223,7 @@ class XLogin /*{{{*/
 
 		$xu['id'] = $user->ID;
 		$xu['xtype'] = $type;
-		if (!$this->attrFlowSet("$type-xuser", $xu))
+		if (!$this->flowAttrSet("$type-xuser", $xu))
 			return null;
 
 		return (string)$redir;
@@ -1094,6 +1248,10 @@ class XLogin /*{{{*/
 	{
 		global $wpdb;
 		$usersTable = $this->getTableXUsers();
+
+		$name = static::sanitizeXUserAlias($type, $name);
+		if ($name instanceof WP_Error)
+			return $name;
 
 		$xhash = static::getXUserHash($type, $name, $obscure);
 
@@ -1295,10 +1453,14 @@ class XLogin /*{{{*/
 	 * @param string $name External user name, e.g. Google email address.
 	 * @return WP_User Null if not found.
 	 */
-	protected function resolveUserByExternalAlias($type, $name) /*{{{*/
+	protected function resolveXUserByAlias($type, $name) /*{{{*/
 	{
 		global $wpdb;
 		$usersTable = $this->getTableXUsers();
+
+		$name = static::sanitizeXUserAlias($type, $name);
+		if ($name instanceof WP_Error)
+			return null;
 
 		$xhash = static::getXUserHash($type, $name);
 		$sql = $wpdb->prepare("SELECT * FROM $usersTable WHERE xhash=%s", [
@@ -1312,6 +1474,25 @@ class XLogin /*{{{*/
 
 		$user = get_user_by('id', $xuser->uid);
 		return $user ? $user : null;
+	} /*}}}*/
+
+	/**
+	 * Sanitize user external alias.
+	 * @param string $type Alias type, e.g. 'email'.
+	 * @param array $name Alias name, e.g. an email address.
+	 * @return string|WP_Error Sanitized $name, or error.
+	 */
+	public static function sanitizeXUserAlias($type, $name) /*{{{*/
+	{
+		switch ($type) {
+		case 'email':
+			$name = sanitize_email($name);
+			if ($name == '')
+				return new WP_Error('input-invalid', 'Invalid email address.');
+			return $name;
+		default:
+			return new WP_Error('input-invalid', 'Unknown user alias type.');
+		}
 	} /*}}}*/
 
 	/**
@@ -1476,7 +1657,7 @@ class XLogin /*{{{*/
 		$options = $this->sanitizeOptions($options);
 
 		if (!update_option($this->getOptionsName(), $options))
-			return new WP_Error('system_error', 'Failed to save option.');
+			return new WP_Error('server_error', 'Failed to save option.');
 
 		// Reload options.
 		$this->getOptions($cache=false);

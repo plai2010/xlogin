@@ -1,36 +1,27 @@
 <?php
-/**
- * Render a basic error page.
- * @copyright Copyright (c) 2020 Patrick Lai
+/*
+ * Render a basic error page or redirect to login page to display error.
  *
  * @todo WordPress way of error page generation?
  * @param string $error Error code.
  * @param string $etext Error message text.
  * @param string $title Optional error page title.
+ *
+ * @copyright Copyright (c) 2020 Patrick Lai
  */
-
-require_once __DIR__.'/var/boot.php';
-
-call_user_func(function($error, $etext, $title) {
-	// TODO: Configurable login URL?
-	//
-	$login = site_url('/wp-login.php');
+call_user_func(function($error, $etext, $title) use($xlogin) {
+	$login = wp_login_url();
 	
 	// Redirect to login page with error info.
 	// TODO: pass on landing page URL?
 	//
-	if ($login) {
-		$login .= (strpos($login, '?') === false) ? '?' : '&';
-
-		$login .= implode('&', [
-			'pl2010_xlogin_error='.rawurlencode($error),
-			'pl2010_xlogin_etext='.rawurlencode($etext),
-		]);
-		wp_redirect($login);
-		exit;
+	if ($login != '') {
+		$xlogin->flowErrorSet($error, $etext);
+		if (wp_redirect($login))
+			exit;
 	}
 
-	// No login page provided; generate barebone error page.
+	// No login page provided or redirect failed; generate barebone error page.
 	//
 	if ($title == '')
 		$title = __('External Login Error', 'pl2010');

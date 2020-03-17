@@ -25,8 +25,7 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 	// TODO: configurable Vue.js loading?
 	wp_enqueue_script('wp-api');
 	wp_enqueue_script('jquery');
-//	wp_enqueue_script('vue','https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.js');
-	wp_enqueue_script('vue','https://cdn.jsdelivr.net/npm/vue@2.6');
+	wp_enqueue_script('vue', "{$pluginUrl}/js/vue-2.6.11.js");
 
 	wp_enqueue_style(
 		'pl2010-xlogin',

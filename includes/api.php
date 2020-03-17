@@ -29,7 +29,7 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 					'type' => $type,
 					'name' => $xlogin->getAuthTypeName($type),
 					'model' => $xlogin->getLoginModel($type),
-					'redir' => $xlogin->getRedirectUrl($type),
+					'redir' => $xlogin->getCallbackUri('recv', $type),
 					'icon' => $imgBaseUrl.$type.'/btn-signin.png',
 				];
 			}
@@ -177,11 +177,15 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 			],
 			'login' => [
 				'required' => false,
-			//	'validate_callback' =>
-			//		'PL2010\WordPress\XLoginApi::validateUserLogin',
+				'sanitize_callback' => function($login) {
+					return sanitize_text_field($login);
+				},
 			],
 			'alias' => [
 				'required' => false,
+				'sanitize_callback' => function($alias) {
+					return sanitize_text_field($alias);
+				},
 			],
 		],
 		'permission_callback' => 'PL2010\WordPress\XLoginApi::checkPermRead',
@@ -215,8 +219,9 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 		'args' => [
 			'alias' => [
 				'required' => true,
-			//	'validate_callback' =>
-			//		'PL2010\WordPress\XLoginApi::validateUserAlias',
+				'sanitize_callback' => function($alias) {
+					return sanitize_text_field($alias);
+				},
 			],
 		],
 		'permission_callback' => 'PL2010\WordPress\XLoginApi::checkPermRead',

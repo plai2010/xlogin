@@ -13,8 +13,8 @@ Login to WordPress with external services like Facebook, Google, and Yahoo.
 
 == Description ==
 
-XLogin enhances the WordPress login page (wp-login.php) to allow users
-to authenticate with the following external services:
+XLogin enhances the WordPress login page (usually wp-login.php) to allow
+users to authenticate with the following external services:
 
 * Facebook Login
 * Google Sign-In
@@ -79,6 +79,16 @@ when he logs in with Facebook.
     * Multiple aliases may be uploaded in a CSV file. Each line in the
       file contains an email address and a WordPress user name, separated
       by comma.
+
+This plugin requires WordPress rewrite
+If WordPress permalinks are 'plain', one may need to configure the
+web server to route callbacks from external service to WordPress
+index.php script. For Apache that would mean rewrite rules in .htaccess
+like theses:
+```
+  RewriteEngine On
+  RewriteRule wp-content/plugins/xlogin/callback/ index.php [L]
+```
 
 == Frequently Asked Questions ==
 

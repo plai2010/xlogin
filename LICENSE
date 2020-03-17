@@ -50,6 +50,11 @@ This program includes various thirdparty software components:
   - files: vendor/ralouphie/getallheaders/*
   - license: vendor/ralouphie/getallheaders/LICENSE
 
+* Vue.js
+  - https://cdn.jsdelivr.net/npm/vue@2.6.11
+  - file: js/vue-2.6.11.js
+  - license: MIT License
+
 The following image files are also incorporated:
 
 * Facebook icon(s)
@@ -76,9 +81,5 @@ following web resources:
 * Google 'Roboto' font
   - https://fonts.googleapis.com/css?family=Roboto
   - license: Apache License 2.0
-
-* Vue.js
-  - https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.js
-  - license: MIT License
 
 # vim: set ts=2 expandtab:

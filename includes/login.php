@@ -85,8 +85,17 @@ add_action('login_footer', function() use($CTX) /*{{{*/ {
 			esc_html_e(__('Sign in with:', 'pl2010'));
 		?></p>
 		<?php
+		// Redirect URL is expected to be back to WordPress.
+		$redir = $_REQUEST['redirect_to'] ?? null;
+		if ($redir != '') {
+			if (strpos($redir, home_url()) !== 0
+				&& strpos($redir, get_site_url()) !== 0
+			) {
+				$redir = null;
+			}
+		}
 		foreach ($activated as $type => $desc) {
-			$url = $xlogin->getStartUrl($type, $_REQUEST['redirect_to']??null);
+			$url = $xlogin->getStartUrl($type, $redir);
 			?>
 			<button type="button" class="button button-medium" onclick="<?php
 				echo "window.location='", esc_attr($url), "'";
@@ -103,12 +112,17 @@ add_action('login_footer', function() use($CTX) /*{{{*/ {
 } /*}}}*/);
 
 /** Add failed external login error. */
-add_action('wp_login_errors', function($errors, $redir) /*{{{*/ {
-	if (!empty($_REQUEST['pl2010_xlogin_error'])) {
+add_action('wp_login_errors', function($errors, $redir) use($CTX) /*{{{*/ {
+	$xlogin = XLogin::getInstance($CTX['plugin']);
+	list(
+		$error,
+		$etext,
+	) = $xlogin->flowErrorGet($clear=true);
+
+	if ($error != '') {
 		$ecode = 0;
-		$etext = empty($_REQUEST['pl2010_xlogin_etext'])
-			? __('Error: ', 'pl2010').$_REQUEST['pl2010_xlogin_error']
-			: $_REQUEST['pl2010_xlogin_etext'];
+		if ($etext == '')
+			$etext = __('Error: ', 'pl2010').$error;
 		$errors->add($ecode, $etext);
 	}
 	return $errors;

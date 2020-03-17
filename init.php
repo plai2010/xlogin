@@ -19,6 +19,56 @@ call_user_func(function($CTX) {
 require_once __DIR__.'/vendor/autoload.php';
 
 //--------------------------------------------------------------
+/** Handle callbacks from external login services. */
+add_action('init', function() use($CTX) /*{{{*/ {
+	$xlogin = XLogin::getInstance($CTX['plugin']);
+	$plugin = $xlogin->getName();
+
+	if ($CTX['debug'] ?? false) {
+		$xlogin->setDebugLogger(function($msg) use($xlogin) {
+			error_log("PL2010 {$xlogin->getName()}: $msg");
+		});
+	}
+
+	$uri = $_SERVER['REQUEST_URI'] ?? null;
+	if ($uri) {
+		if ($callbk = $xlogin->getCallbackByUri($uri, $xtype)) {
+			$error = $_REQUEST['error'] ?? null;
+			$etext = $_REQUEST['error_description'] ?? null;
+
+			if ($error != '') {
+				// Handle error conveyed to callback by external service.
+				list(
+					$error,
+					$etext,
+				) = $xlogin->flowErrorRecv($error, $etext);
+			}
+			else {
+				// Callback script expects these: $xlogin, $xtype.
+				// It returns true for success, and false with $error
+				// and $etext set otherwise.
+				if ($xtype == '') {
+					$error = 'invalid_request';
+					$etext = __('External login type missing.', 'pl2010');
+				}
+				else {
+					// Done if callback succeeds.
+					if (require __DIR__."/$callbk.php")
+						exit();
+				}
+			}
+
+			// Error encountered if we get here. Make sure error script
+			// has an $error to work on.
+			$error = $error ?: 'server_error';
+			http_response_code(500);
+			require __DIR__.'/error.php';
+			exit();
+		}
+	}
+} /*}}}*/);
+
+//--------------------------------------------------------------
 /** Override in-memory user properties with info from external auth. */
 add_action('set_current_user', function() use($CTX) /*{{{*/ {
 	$xlogin = XLogin::getInstance($CTX['plugin']);
@@ -68,20 +118,6 @@ add_action('set_logged_in_cookie', function(
 register_activation_hook(__FILE__, function() use($CTX) /*{{{*/ {
 	$xlogin = XLogin::getInstance($CTX['plugin']);
 	$pluginName = $xlogin->getName();
-
-	// Generate a bootstrap script to load dependent items, to be
-	// included by start.php etc.
-	$bootscript = __DIR__.'/var/boot.php';
-	$wpLoad = ABSPATH.'wp-load.php';
-	$vendor = __DIR__.'/vendor/autoload.php';
-	ob_start();
-	echo "<?php\n";
-	echo "// THIS IS A GENERATED SCRIPT.\n";
-	echo 'require_once ', var_export($wpLoad, true), ";\n";
-	echo 'require_once ', var_export($vendor, true), ";\n";
-	$code = ob_get_clean();
-	if (file_put_contents($bootscript, $code) === false)
-		throw new Exception("cannot save bootstrap script: $bootscript");
 
 	$xlogin->updateDbSchema();
 	add_option("${pluginName}_options", $xlogin->getDefaultOptions());
