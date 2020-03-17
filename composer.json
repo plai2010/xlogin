@@ -1,0 +1,11 @@
+{
+  "autoload": {
+    "psr-4": {
+      "PL2010\\WordPress\\": "lib/"
+    }
+  },
+  "require": {
+    "league/oauth2-facebook": "^2.0",
+    "league/oauth2-google": "^3.0"
+  }
+}

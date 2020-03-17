@@ -1,0 +1,112 @@
+div.pl2010-xlogin-launch {
+	margin: auto;
+	width: 320px;
+}
+div.pl2010-xlogin-launch p.title {
+	font-size: 18px;
+	font-style: italic;
+}
+
+/***********************************************************************
+ * Facebook login button.
+ */
+div.pl2010-xlogin-launch button[data-xtype=facebook] {
+	background-color: #4267B2;
+	color: #FFFFFF;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	padding: 0px;
+	padding-left: 8px;
+	padding-right: 8px;
+	width: 145px;
+}
+div.pl2010-xlogin-launch button[data-xtype=facebook] span {
+	margin: 0px;
+	padding: 0px;
+}
+div.pl2010-xlogin-launch button[data-xtype=facebook] label {
+	font-family: Arial;
+	font-size: 18px;
+	margin: 0px;
+	padding: 0px;
+	padding-top: 4px;
+}
+div.pl2010-xlogin-launch button[data-xtype=facebook] img {
+	vertical-align: middle;
+	float: left;
+	width: 32px;
+	margin: 0px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	margin-right: 12px;
+	padding: 0px;
+}
+
+/***********************************************************************
+ * Google sign-in button (dark).
+ * https://developers.google.com/identity/branding-guidelines
+ */
+div.pl2010-xlogin-launch button[data-xtype=google] {
+	background-color: #4285F4;
+	color: #FFFFFF;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	padding: 0px;
+	padding-left: 8px;
+	padding-right: 8px;
+	width: 145px;
+}
+div.pl2010-xlogin-launch button[data-xtype=google] span {
+	margin: 0px;
+	padding: 0px;
+}
+div.pl2010-xlogin-launch button[data-xtype=google] label {
+	font-family: Roboto;
+	font-size: 18px;
+	margin: 0px;
+	padding: 0px;
+	padding-top: 4px;
+}
+div.pl2010-xlogin-launch button[data-xtype=google] img {
+	vertical-align: middle;
+	float: left;
+	width: 36px;
+	margin: 0px;
+	margin-right: 12px;
+	padding: 0px;
+}
+
+/***********************************************************************
+ * Yahoo! login button.
+ */
+div.pl2010-xlogin-launch button[data-xtype=yahoo] {
+	background-color: #8F24AA;
+	color: #FFFFFF;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	padding: 0px;
+	padding-left: 8px;
+	padding-right: 8px;
+	width: 145px;
+}
+div.pl2010-xlogin-launch button[data-xtype=yahoo] span {
+	margin: 0px;
+	padding: 0px;
+}
+div.pl2010-xlogin-launch button[data-xtype=yahoo] label {
+	font-family: Arial;
+	font-size: 18px;
+	margin: 0px;
+	padding: 0px;
+	padding-top: 4px;
+}
+div.pl2010-xlogin-launch button[data-xtype=yahoo] img {
+	vertical-align: middle;
+	float: left;
+	width: 36px;
+	margin: 0px;
+	margin-right: 12px;
+	padding: 0px;
+}
+
+/* vim: set ts=2 noexpandtab syntax=css: */

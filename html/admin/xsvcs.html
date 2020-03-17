@@ -1,0 +1,103 @@
+<!--
+ * External login services admin.
+ * Author: Patrick Lai
+ *
+ * @todo Localization.
+ * @copyright Copyright (c) 2020 Patrick Lai
+-->
+<div id="pl2010-xlogin-xsvcs">
+	<!-- Modal dialog to configure external service. {{{-->
+	<pl2010-modal v-if="svc" @close="svc=null">
+		<h3 slot="title">Configure Login Service: {{svc.name}}</h3>
+		<div slot="body">
+			<hr>
+			<table>
+			<tr>
+				<td>Enabled:</td>
+				<td>
+					<input type="checkbox" v-model="svc.data.enabled">
+				</td>
+			</tr>
+			<tr>
+				<td>Restricted:</td>
+				<td>
+					<input type="checkbox" v-model="svc.data.restricted">
+					<span v-if="svc.data.restricted" class="description">
+						Only for users with external aliases.
+					</span>
+					<span v-if="!svc.data.restricted" class="description">
+						For all users, not just those with external aliases.
+					</span>
+				</td>
+			</tr>
+			<tr>
+				<td>Import profile:</td>
+				<td>
+					<input type="checkbox" v-model="svc.data.override">
+					<span v-if="svc.data.override" class="description">
+						Import name, email, etc. into session.
+					</span>
+					<span v-if="!svc.data.override" class="description">
+						No import from external profile.
+					</span>
+				</td>
+			</tr>
+			<template v-if="svc.model=='oauth2'">
+			<tr>
+				<td>Client ID:</td>
+				<td>
+					<input type="text" v-model="svc.data.config.client_id"
+						placeholder="OAuth2 client ID"
+					>
+				</td>
+			</tr>
+			<tr>
+				<td>Client secret:</td>
+				<td>
+					<input type="text" v-model="svc.data.config.client_secret"
+						placeholder="OAuth2 client secret"
+					>
+				</td>
+			</tr>
+			<tr>
+				<td>Custom scope:</td>
+				<td>
+					<input type="text" v-model="svc.data.config.scope"
+						placeholder="scope1 scope2 ..."
+					>
+				</td>
+			</tr>
+			</template>
+			<template v-else>
+			<tr>
+				<td>Configuration:</td>
+				<td>
+					<textarea v-model="svc.data.config" rows="5"></textarea>
+				</td>
+			</tr>
+			</template>
+			</table>
+			<p v-if="svc.redir">
+			Redirect URI: {{svc.redir}}
+			</p>
+		</div>
+		<div slot="footer">
+			<button type="button" @click="svc=null">Cancel</button>
+			&nbsp;
+			<button type="button" @click="updateSvcConfig(svc)">Update</button>
+		</div>
+	</pl2010-modal> <!--}}}-->
+
+	<p>
+	Configure:
+	<template v-for="x in xsvcs">
+		&nbsp;
+		<button type="button" v-bind:data-xtype="x.type" @click="configSvc(x)">
+			<img v-if="x.icon" v-bind:src="x.icon">
+			{{x.name}}
+		</button>
+	</template>
+	</p>
+</div>
+
+<!-- vim: set ts=4 noexpandtab fdm=marker syntax=html: ('zR' to unfold all) -->
