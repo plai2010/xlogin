@@ -7,11 +7,15 @@
  */
 use PL2010\WordPress\XLogin;
 
-/** Extra header items for login form. */
+/** Extra scripts needed for login page. */
+add_action('login_enqueue_scripts', function() /*{{{*/ {
+	wp_enqueue_script('jquery');
+} /*}}}*/);
+
+/** Extra header items for login page. */
 add_action('login_head', function() use($CTX) /*{{{*/ {
 	$xlogin = XLogin::getInstance($CTX['plugin']);
 
-	wp_enqueue_script('jquery');
 	//----------------------------------------------------------
 	// HTML <head> items follows
 	// TODO: sign-on hook JS function assumes login page with elements
@@ -20,7 +24,7 @@ add_action('login_head', function() use($CTX) /*{{{*/ {
 	<script type="text/javascript">
 		var PL2010 = PL2010 || {};
 		PL2010.debug = function() {};
-		<?php if ($CTX['debug'] ?? false) { ?>
+		<?php if (defined('PL2010_XLOGIN_DEBUG') && PL2010_XLOGIN_DEBUG) { ?>
 		PL2010.debug = console.debug;
 		<?php } ?>
 
@@ -85,17 +89,39 @@ add_action('login_footer', function() use($CTX) /*{{{*/ {
 			esc_html_e(__('Sign in with:', 'pl2010'));
 		?></p>
 		<?php
-		// Redirect URL is expected to be back to WordPress.
-		$redir = $_REQUEST['redirect_to'] ?? null;
-		if ($redir != '') {
-			if (strpos($redir, home_url()) !== 0
-				&& strpos($redir, get_site_url()) !== 0
-			) {
-				$redir = null;
-			}
+		// Reconstruct URL back to this page (which is the login page).
+		// However, make sure to filter out 'reauth' which causes loss
+		// of WP session. (The 'reauth' has already taken its effect.)
+		// TODO: other query parameters to filter out?
+		$login = parse_url(wp_login_url());
+		$redir = $login['scheme'].'://'.$login['host'];
+		if (isset($login['port']))
+			$redir .= ':'.$login['port'];
+		$redir .= $_SERVER['REQUEST_URI'];
+		if (!empty($_SERVER['QUERY_STRING'])) {
+			$qmark = strpos($redir, '?');
+			if ($qmark !== false)
+				$redir = substr($redir, 0, $qmark+1);
+			else
+				$redir .= '?';
+			$qparams = explode('&', $_SERVER['QUERY_STRING']);
+			$qparams = array_filter($qparams, function($nvp) {
+				$eq = strpos($nvp, '=');
+				$n = urldecode($eq === false ? $nvp : substr($nvp, 0, $eq));
+				return $n != 'reauth';
+			});
+			$redir .= implode('&', $qparams);
 		}
+
+		// Render start button for each login type.
 		foreach ($activated as $type => $desc) {
-			$url = $xlogin->getStartUrl($type, $redir);
+			// Add pl2010_xauth to the redirect back to login.
+			$url = $xlogin->getStartUrl($type, add_query_arg([
+				'pl2010_xauth' => urlencode($type),
+			], $redir));
+			if ($url == null)
+				continue;
+			$xlogin->logDebug("$type start: $url");
 			?>
 			<button type="button" class="button button-medium" onclick="<?php
 				echo "window.location='", esc_attr($url), "'";

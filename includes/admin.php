@@ -101,18 +101,6 @@ add_action('admin_menu', function() use($CTX) /*{{{*/ {
 			if (!current_user_can('manage_options'))
 				return;
 
- 			// Settings submitted? Wordpress provides 'settings-updated'
-			// TODO: setting error should be added in $sanitize_callback
-			// of register_setting()
-			if (isset($_GET['settings-updated'])) {
-				add_settings_error(
-					'pl2010-xlogin',
-					"pl2010-xlogin-settings-updated",
-					__('Settings Saved', 'pl2010'),
-					'info'
-				);
-			}
- 
 			//------------------------------------------------------
 			// Settings page HTML {{{
 			?>

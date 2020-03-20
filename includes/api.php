@@ -251,8 +251,13 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 			$incr = $req->get_param('incr');
 			$emax = $req->get_param('emax');
 			$user = (string)$req->get_param('user');
-			$file = $_FILES['file']['tmp_name'] ?? null;
-			if (!$file) {
+			$file = null;
+			if (isset($_FILES['file']['tmp_name'])) {
+				// Calling realpath() on 'tmp_name' really is unnecessary,
+				// as that is filled in by PHP.
+				$file = realpath($_FILES['file']['tmp_name']);
+			}
+			if ($file == '') {
 				return XLoginApi::checkError(new WP_Error(
 					'input-missing',
 					'No file uploaded.'

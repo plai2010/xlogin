@@ -270,6 +270,7 @@ class XLogin /*{{{*/
 				return null;
 			}
 			$this->sess_init = true;
+			$this->logDebug("PHP session ...".substr(session_id(), -4));
 		}
 		return $_SESSION[$n] ?? null;
 	} /*}}}*/
@@ -297,6 +298,7 @@ class XLogin /*{{{*/
 				return false;
 			}
 			$this->sess_init = true;
+			$this->logDebug("PHP session ...".substr(session_id(), -4));
 		}
 		if ($v !== null)
 			$_SESSION[$n] = $v;
@@ -332,16 +334,9 @@ class XLogin /*{{{*/
 	 */
 	public function flowErrorRecv($error, $etext) /*{{{*/
 	{
-		// Don't expect anything funny in error code/label.
-		$error = preg_replace('/[^.A-Za-z0-9_\-]/', '', $error);
-
-		// Error message could generally be anything text, but let's
-		// say it shouldn't be longer than certain length.
-		$etext = wp_check_invalid_utf8(substr($etext, 0, 80), $strip=true);
-
 		return [
 			$error,
-			$etext,
+			$error == '' ? $etext : null
 		];
 	} /*}}}*/
 
@@ -616,6 +611,19 @@ class XLogin /*{{{*/
 		if (!$inst) {
 			$baseUrl = plugin_dir_url($file);
 			$inst = self::$INSTANCES[$name] = new static($name, $baseUrl);
+
+			if (defined('PL2010_XLOGIN_DEBUG')) {
+				if ($debug = PL2010_XLOGIN_DEBUG) {
+					if (is_callable($debug))
+						$inst->setDebugLogger($debug);
+					else {
+						$tag = "PL2010 {$inst->getName()}";
+						$inst->setDebugLogger(function($msg) use($tag) {
+							error_log("$tag: $msg");
+						});
+					}
+				}
+			}
 		}
 		return $inst;
 	} /*}}}*/
@@ -666,6 +674,27 @@ class XLogin /*{{{*/
 			$last[0],
 			__($last[1], $txtdom),
 		];
+	} /*}}}*/
+
+	/**
+	 * Get expected credential fields for an external login type.
+	 * @param string $type Login type, e.g. 'google'.
+	 * @return array Field name to field type (boolean, integer, string).
+	 */
+	public function getLoginCredentFields($type) { /*{{{*/
+		switch ($this->getLoginModel($type)) {
+		case 'oauth2':
+			// These are OAuth2 response items.
+			return [
+				'code' => 'string',
+				'error' => 'string',
+				'error_description' => 'string',
+				'scope' => 'string', // Google does this
+				'state' => 'string',
+			];
+		default:
+			return [];
+		}
 	} /*}}}*/
 
 	/**
@@ -752,8 +781,7 @@ class XLogin /*{{{*/
 			$user = $provider->getResourceOwner($token);
 		}
 		catch (IdentityProviderException $ex) {
-		//	$this->logDebug("OAuth2 exception: $ex");
-			error_log("OAuth2 exception: $ex");
+			$this->logDebug("OAuth2 exception: $ex");
 			$user = null;
 		}
 		if (!$user) {
@@ -861,16 +889,13 @@ class XLogin /*{{{*/
 	 * Get URL to start login flow.
 	 * @param string $type Login type, e.g. 'google'.
 	 * @param string $redir Redirect URL for successful login.
-	 * @return string
+	 * @return string Null if error.
 	 */
 	public function getStartUrl($type, $redir=null) /*{{{*/
 	{
+		if (!$this->flowAttrSet("$type.redir", $redir))
+			return null;
 		$url = $this->getCallbackUri('start', $type);
-		if ($redir != '') {
-			$url = add_query_arg([
-				'redir' => $redir,
-			], $url);
-		}
 		return $url;
 	} /*}}}*/
 
@@ -1065,6 +1090,9 @@ class XLogin /*{{{*/
 			return null;
 		}
 
+		if ($redir == '')
+			$redir = $this->flowAttrGet("$type.redir");
+
 		switch ($this->getLoginModel($type)) {
 		case 'oauth2':
 			return $this->launchOAuth2($config, $type, $redir);
@@ -1150,10 +1178,7 @@ class XLogin /*{{{*/
 			return null;
 		}
 
-		$url = add_query_arg([
-			'pl2010_xauth' => $type,
-		], wp_login_url($target));
-		return $url;
+		return $target;
 	} /*}}}*/
 
 	/**
@@ -1165,6 +1190,11 @@ class XLogin /*{{{*/
 	 */
 	public function recvOAuth2($provider, $type, $input) /*{{{*/
 	{
+		$this->logDebug(function() use($type, $input) {
+			if (isset($input['code']))
+				$input['code'] = '***['.strlen($input['code']).']***';
+			return "receiving OAuth2[$type] result: ".json_encode($input);
+		});
 		if (($code = $input['code'] ?? null) == '') {
 			$this->setError('invalid_request', 'Missing code.');
 			return null;
@@ -1185,8 +1215,7 @@ class XLogin /*{{{*/
 			]);
 		}
 		catch (IdentityProviderException $ex) {
-		//	$this->logDebug("OAuth2 exception: $ex");
-			error_log("OAuth2 exception: $ex");
+			$this->logDebug("OAuth2 exception: $ex");
 			$token = null;
 		}
 		if ($token == '') {
@@ -1226,6 +1255,7 @@ class XLogin /*{{{*/
 		if (!$this->flowAttrSet("$type-xuser", $xu))
 			return null;
 
+		$this->logDebug("OAuth2 success: $redir");
 		return (string)$redir;
 	} /*}}}*/
 

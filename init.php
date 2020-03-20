@@ -15,6 +15,8 @@ use WP_User;
 use Exception;
 */
 
+// define('PL2010_XLOGIN_DEBUG', true);
+
 call_user_func(function($CTX) {
 require_once __DIR__.'/vendor/autoload.php';
 
@@ -24,17 +26,27 @@ add_action('init', function() use($CTX) /*{{{*/ {
 	$xlogin = XLogin::getInstance($CTX['plugin']);
 	$plugin = $xlogin->getName();
 
-	if ($CTX['debug'] ?? false) {
-		$xlogin->setDebugLogger(function($msg) use($xlogin) {
-			error_log("PL2010 {$xlogin->getName()}: $msg");
-		});
-	}
-
 	$uri = $_SERVER['REQUEST_URI'] ?? null;
 	if ($uri) {
 		if ($callbk = $xlogin->getCallbackByUri($uri, $xtype)) {
-			$error = $_REQUEST['error'] ?? null;
-			$etext = $_REQUEST['error_description'] ?? null;
+			// Don't expect anything funny in error code/label.
+			$error = null;
+			if (isset($_REQUEST['error'])) {
+				$error = preg_replace(
+					'/[^.A-Za-z0-9_\-]/',
+					'',
+					$_REQUEST['error']
+				);
+			}
+
+			// Error message could generally be anything text, but let's
+			// say it shouldn't be longer than certain length.
+			$etext = null;
+			if (isset($_REQUEST['error_description'])) {
+				$etext = wp_check_invalid_utf8(
+					substr($_REQUEST['error_description'], 0, 80)
+				);
+			}
 
 			if ($error != '') {
 				// Handle error conveyed to callback by external service.
@@ -72,13 +84,6 @@ add_action('init', function() use($CTX) /*{{{*/ {
 /** Override in-memory user properties with info from external auth. */
 add_action('set_current_user', function() use($CTX) /*{{{*/ {
 	$xlogin = XLogin::getInstance($CTX['plugin']);
-
-	if ($CTX['debug'] ?? false) {
-		$xlogin->setDebugLogger(function($msg) use($xlogin) {
-			error_log("PL2010 {$xlogin->getName()}: $msg");
-		});
-	}
-
 	$xlogin->importXUser();
 } /*}}}*/);
 
@@ -90,16 +95,16 @@ add_filter('authenticate', function($user, $name, $pass) use($CTX) /*{{{*/ {
 	if ($pass != '')
 		return $user;
 
-	$auth = $_REQUEST['pl2010_xauth'] ?? '';
+	$xlogin = XLogin::getInstance($CTX['plugin']);
+
+	$auth = null;
+	if (isset($_REQUEST['pl2010_xauth'])
+		&& in_array($_REQUEST['pl2010_xauth'], $xlogin->getAuthTypesEnabled())
+	) {
+		$auth = $_REQUEST['pl2010_xauth'];
+	}
 	if ($auth == '')
 		return $user;
-
-	$xlogin = XLogin::getInstance($CTX['plugin']);
-	if ($CTX['debug'] ?? false) {
-		$xlogin->setDebugLogger(function($msg) use($xlogin) {
-			error_log("PL2010 {$xlogin->getName()}: $msg");
-		});
-	}
 
 	if ($auth != '')
 		return $xlogin->getAuthenticated($auth, $name, $clear=true) ?? $user;
@@ -134,7 +139,6 @@ require __DIR__.'/includes/login.php';
 //--------------------------------------------------------------
 }, [
 	'plugin' => __FILE__,
-//	'debug' => true,
 ]);
 
 // vim: set ts=4 noexpandtab fdm=marker syntax=php: ('zR' to unfold all)

@@ -17,7 +17,35 @@ return call_user_func(function() use($xlogin, $xtype, &$error, &$etext) {
 	$error = $etext = null;
 
 	try {
-		$redir = $xlogin->recvLoginCredential($xtype, $_GET??null);
+		// Some basic filtering here. Strictly speaking not necessary
+		// if recvLoginCredential() is robust.
+		$creds = [];
+		foreach ($xlogin->getLoginCredentFields($xtype) as $fn => $ft) {
+			if (isset($_GET[$fn])) {
+				switch ($ft) {
+				case 'boolean':
+					$fv = filter_var(
+						$_GET[$fn],
+						FILTER_VALIDATE_BOOLEAN,
+						FILTER_NULL_ON_FAILURE
+					);
+					if ($fv !== null)
+						$creds[$fn] = $fv;
+					break;
+				case 'integer':
+					$fv = filter_var($_GET[$fn], FILTER_VALIDATE_INT);
+					if ($fv !== false)
+						$creds[$fn] = $fv;
+					break;
+				case 'string':
+				default:
+					$creds[$fn] = wp_check_invalid_utf8($_GET[$fn]);
+					break;
+				}
+			}
+		}
+
+		$redir = $xlogin->recvLoginCredential($xtype, $creds);
 		if ($redir != '') {
 			header("Location: $redir");
 			return true;

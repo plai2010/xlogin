@@ -8,25 +8,15 @@
  *
  * @param \PL2010\WordPress\XLogin $xlogin XLogin instance.
  * @param string $xtype External login type, e.g. 'google'.
- * @param array $_REQUEST Provide landing URL as 'redir'.
  * @return boolean
  *
  * @copyright Copyright (c) 2020 Patrick Lai
  */
 assert($xlogin && $xtype != '');
 return call_user_func(function() use($xlogin, $xtype, &$error, &$etext) {
-	// TODO: sanitize $redir?
-	$redir = $_REQUEST['redir'] ?? null;
-
 	$error = $etext = null;
-	if ($xtype == '') {
-		$error = 'invalid_request';
-		$etext = __('External login type missing.', 'pl2010');
-		return false;
-	}
-
 	try {
-		$redir = $xlogin->launchLoginFlow($xtype, $redir);
+		$redir = $xlogin->launchLoginFlow($xtype);
 		if ($redir != '') {
 			header("Location: $redir");
 			return true;
@@ -42,6 +32,8 @@ return call_user_func(function() use($xlogin, $xtype, &$error, &$etext) {
 		$etext = null;
 	}
 
+	// Successful start would have ended with a redirect and not ever
+	// reached here.
 	$error = $error ?: 'server_error';
 	return false;
 });
