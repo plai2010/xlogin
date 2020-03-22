@@ -27,6 +27,37 @@ jQuery(document).ready(function() {
 				}
 			});
 		},
+		computed: {
+			incompleteSvcConfig: function() {
+				let xs = this.svc;
+				if (!xs || !xs.data || !xs.data.config)
+					return true;
+				let cfg = xs.data.config;
+				if (!cfg)
+					return true;
+				switch (xs.model) {
+				case 'oauth2':
+					if (!cfg.client_id || cfg.client_id.trim() == '')
+						return true;
+					if (!cfg.client_secret || cfg.client_secret.trim() == '')
+						return true;
+					break;
+				case 'generic':
+				default:
+					// Generic object as JSON.
+					try {
+						cfg = JSON.parse(xs.data.config);
+					}
+					catch (err) {
+						return true;
+					}
+					if (!cfg || typeof cfg != 'object')
+						return true;
+					break;
+				}
+				return null;
+			}
+		},
 		methods: {
 			/**
 			 * Configure external login service.
@@ -34,8 +65,9 @@ jQuery(document).ready(function() {
 			configSvc(xs) {
 				pl2010_XLoginApi.get('/xsvcs/'+xs.type+'/config').done(resp => {
 					xs.data = this.dataMarshalIn(xs, resp.data);
-					if (xs.data)
-						this.svc = xs;
+					if (xs.data) {
+						this.svc = jQuery.extend({}, xs);
+					}
 				});
 			},
 

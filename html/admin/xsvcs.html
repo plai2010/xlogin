@@ -84,7 +84,10 @@
 		<div slot="footer">
 			<button type="button" @click="svc=null">Cancel</button>
 			&nbsp;
-			<button type="button" @click="updateSvcConfig(svc)">Update</button>
+			<button type="button"
+				@click="updateSvcConfig(svc)"
+				:disabled="incompleteSvcConfig"
+			>Update</button>
 		</div>
 	</pl2010-modal> <!--}}}-->
 
