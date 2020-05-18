@@ -74,6 +74,26 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 	);
 	// }}}
 	//------------------------------------------------------
+	// Customization section. {{{
+	//
+	add_settings_section(
+		'pl2010-xlogin-customize',
+		__('Customization', 'pl2010'),
+		function($args) {
+			$admin = __DIR__."/../html/admin";
+			echo file_get_contents("{$admin}/customize.html");
+			?>
+			<script type="text/javascript">
+			<?php
+			echo file_get_contents("{$admin}/customize.js");
+			?>
+			</script>
+			<?php
+		},
+		'pl2010-xlogin'
+	);
+	// }}}
+	//------------------------------------------------------
 } /*}}}*/);
 
 /** Register settings page to admin menu. */

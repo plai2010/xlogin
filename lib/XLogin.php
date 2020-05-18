@@ -17,7 +17,7 @@ use WP_Error;
 use WP_Session_Tokens;
 use WP_User;
 
-use Exception;
+use Throwable;
 
 /**
  * External login service for a WordPress plugin.
@@ -575,6 +575,16 @@ class XLogin /*{{{*/
 
 		$uri = $this->url_base.$this->getCallbackPathRelative($cb, $type);
 		return $uri;
+	} /*}}}*/
+
+	/**
+	 * Get configuration items for customization.
+	 * @return array Customization config options.
+	 */
+	public function getCustomization() /*{{{*/
+	{
+		$options = $this->getOptions();
+		return $options['customize'] ?? null;
 	} /*}}}*/
 
 	/**
@@ -1571,6 +1581,26 @@ class XLogin /*{{{*/
 			'code' => static::class,
 		];
 
+		// Customization config items.
+		if (is_array($input['customize']??null)) {
+			foreach ($input['customize'] as $key => $val) {
+				switch ($key) {
+				case 'login_buttons_info':
+					try {
+						$val = strval($val);
+						$data['customize'][$key] = sanitize_text_field($val);
+					}
+					catch (Throwable $err) {
+						$this->logDebug("invalid customization '$key' value");
+					}
+					break;
+				default:
+					$this->logDebug("unknown customization '$key'");
+					break;
+				}
+			}
+		}
+
 		// Login/auth provider configuration.
 		if (is_array($input['providers']??null)) {
 			foreach ($this->getAuthTypes() as $type) {
@@ -1638,6 +1668,25 @@ class XLogin /*{{{*/
 		$sessTokens->update($token, $sess);
 
 		return true;
+	} /*}}}*/
+
+	/**
+	 * Update customization configuration items.
+	 * @param array $data Config data.
+	 * @return array|WP_Error Updated config data or error.
+	 */
+	public function updateCustomization($data) /*{{{*/
+	{
+		$options = $this->getOptions();
+		$options['customize'] = $data;
+		$options = $this->sanitizeOptions($options);
+
+		if (!update_option($this->getOptionsName(), $options))
+			return new WP_Error('server_error', 'Failed to save option.');
+
+		// Reload options.
+		$this->getOptions($cache=false);
+		return $this->getCustomization();
 	} /*}}}*/
 
 	/**

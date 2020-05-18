@@ -15,6 +15,43 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 	$namespace = 'pl2010/xlogin/v1';
 
 	//--------------------------------------------------------------
+	// Retrieve customization configuration. {{{
+	//
+	register_rest_route($namespace, '/customize', [
+		'methods' => 'GET',
+		'callback' => function($req) use($xlogin) {
+			$conf = $xlogin->getCustomization();
+			return XLoginApi::checkError($conf) ?? [
+				'data' => $conf,
+			];
+		},
+		'permission_callback' => 'PL2010\WordPress\XLoginApi::checkPermRead',
+	]);
+	// }}}
+	//--------------------------------------------------------------
+	// Update customization configuration. {{{
+	//
+	register_rest_route($namespace, '/customize', [
+		'methods' => 'POST',
+		'callback' => function($req) use($xlogin) {
+			$conf = $req->get_param('data');
+			$conf = $xlogin->updateCustomization($conf);
+			return XLoginApi::checkError($conf) ?? [
+				'data' => $conf,
+			];
+		},
+		'args' => [
+			'data' => [
+				'required' => true,
+				'validate_callback' => function($data) {
+					return is_array($data);
+				},
+			],
+		],
+		'permission_callback' => 'PL2010\WordPress\XLoginApi::checkPermUpdate',
+	]);
+	// }}}
+	//--------------------------------------------------------------
 	// Get list of external services. {{{
 	//
 	register_rest_route($namespace, '/xsvcs', [

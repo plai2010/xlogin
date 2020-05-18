@@ -3,7 +3,7 @@ Contributors: scoop082110
 Donate link: https://www.paypal.me/scoop082110
 Tags: login, oauth, google, yahoo, facebook
 Requires at least: 5.3
-Tested up to: 5.3
+Tested up to: 5.4
 Stable tag: 1.0
 Requires PHP: 7.0
 License: GPLv2 or later
@@ -175,6 +175,9 @@ additional OAuth2 based login service as long as a compatible
 6.  Upload CSV file of external aliases.
 
 == Changelog ==
+
+= 1.0.1 (in progress) =
+* Custom message to display with external login buttons.
 
 = 1.0 =
 * First version published.

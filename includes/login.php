@@ -83,6 +83,8 @@ add_action('login_footer', function() use($CTX) /*{{{*/ {
 		[],
 		filemtime("{$pluginDir}css/login.css")
 	);
+
+	$customize = $xlogin->getCustomization();
 	?>
 	<div class="pl2010-xlogin-launch">
 		<p class="title"><?php
@@ -131,6 +133,11 @@ add_action('login_footer', function() use($CTX) /*{{{*/ {
 				require "$pluginDir/html/$type/login-btn.php";
 			?></button>
 			<?php
+		}
+		if ($customize['login_buttons_info'] ?? null) {
+			?><p class="description"><?php
+			esc_html_e($customize['login_buttons_info']);
+			?></p><?php
 		}
 		?>
 	</div>
