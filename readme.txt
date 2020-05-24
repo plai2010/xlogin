@@ -185,6 +185,9 @@ additional OAuth2 based login service as long as a compatible
 
 == Changelog ==
 
+= 1.1.0 (post-1.1 dev) =
+* Miscellaneous bug fixes and enhancements.
+
 = 1.1 =
 * Custom message to display with external login buttons.
 * Guest user for unmatched email address.

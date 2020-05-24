@@ -2,7 +2,7 @@
 /**
  * Plugin Name: XLogin
  * Description: Login using external auth mechanisms.
- * Version: 1.0
+ * Version: 1.1.0
  * Author: Patrick Lai
  *
  * @copyright Copyright (c) 2019,2020 Patrick Lai
@@ -112,7 +112,9 @@ add_filter('authenticate', function($user, $name, $pass) use($CTX) /*{{{*/ {
 			// use site URL if login redirect looks like the admin
 			// page so that user does not get an error page.
 			add_filter('login_redirect', function($url) {
-				if (strpos($url, admin_url()) == 0)
+				$redir = parse_url($url, PHP_URL_PATH);
+				$admin = parse_url(admin_url(), PHP_URL_PATH);
+				if (untrailingslashit($redir) == untrailingslashit($admin))
 					return site_url();
 				return $url;
 			});
