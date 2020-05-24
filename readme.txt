@@ -1,10 +1,9 @@
 === XLogin ===
 Contributors: scoop082110
-Donate link: https://www.paypal.me/scoop082110
 Tags: login, oauth, google, yahoo, facebook
 Requires at least: 5.3
 Tested up to: 5.4
-Stable tag: 1.0
+Stable tag: 1.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -58,6 +57,16 @@ known as 'Johnny D' in his Facebook account, then he would be
 displayed as 'Johnny D (Facebook)' (instead of 'John Doe') in his
 WordPress session when he logs in with Facebook.
 
+Finally XLogin has the notion of 'guest' user. When an email address
+provided by an external service does not correspond to a specific
+WordPress user, XLogin will proceed with a guest WordPress user
+configured for the service. There are plugins that control access to
+content based on user roles; a site can combine such with XLogin to
+control what is visible to guests. Note that guest WordPress users
+should have minimal privileges. XLogin has safeguards to ensure, for
+example, that a guest cannot edit posts. It also filters out guest's
+permission to access the dashboard or to update their own profile.
+
 == Installation ==
 
 1.  Upload the plugin files to the '.../wp-content/plugins/xlogin'
@@ -93,8 +102,8 @@ index.php script. For Apache that would mean rewrite rules in
 
 = Does this work with WordPress version X? =
 
-This plugin is developed on WordPress 5.3. It has not been tried on any
-other version.
+This plugin was originally developed on WordPress 5.3. It works on 5.3
+and 5.4, but has not been tried on any other version.
 
 = Does this work with PHP 5.x? =
 
@@ -176,8 +185,9 @@ additional OAuth2 based login service as long as a compatible
 
 == Changelog ==
 
-= 1.0.1 (in progress) =
+= 1.1 =
 * Custom message to display with external login buttons.
+* Guest user for unmatched email address.
 
 = 1.0 =
 * First version published.

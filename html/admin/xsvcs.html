@@ -42,6 +42,18 @@
 					</span>
 				</td>
 			</tr>
+			<tr>
+				<td>Guest user:</td>
+				<td>
+					<input type="text" v-model="svc.data.guest"
+						placeholder="Guest user for unknown aliases"
+					>
+					<button type="button"
+						@click="checkGuestUser()"
+						:disabled="guestUserNotSpecified"
+					>Check</button>
+				</td>
+			</tr>
 			<template v-if="svc.model=='oauth2'">
 			<tr>
 				<td>Client ID:</td>

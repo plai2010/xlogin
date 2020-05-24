@@ -37,6 +37,14 @@ jQuery(document).ready(function() {
 			});
 		},
 		computed: {
+			guestUserNotSpecified: function() {
+				let xs = this.svc;
+				if (!xs || !xs.data || !xs.data.guest)
+					return true;
+				if (xs.data.guest.trim().length == 0)
+					return true;
+				return null;
+			},
 			incompleteSvcConfig: function() {
 				let xs = this.svc;
 				if (!xs || !xs.data || !xs.data.config)
@@ -68,6 +76,36 @@ jQuery(document).ready(function() {
 			}
 		},
 		methods: {
+			/**
+			 * Check if a guest user is acceptable.
+			 */
+			checkGuestUser() {
+				if (this.guestUserNotSpecified)
+					return;
+				let guest = this.svc.data.guest.trim();
+				this.svc.data.guest = guest;
+				pl2010_XLoginApi.post('/admin', {
+					op: 'check-guest',
+					params: {
+						login: guest
+					}
+				}).done(resp => {
+					if (this.guestUserNotSpecified)
+						return;
+					if (this.svc.data.guest != guest)
+						return;
+					let result = resp.result || {};
+					if (result.success) {
+						if (result.login)
+							this.svc.data.guest = result.login;
+						alert('Guest user acceptable.');
+					}
+					else {
+						alert('Guest user reject: ' + result.err_msg);
+					}
+				});
+			},
+
 			/**
 			 * Configure external login service.
 			 */

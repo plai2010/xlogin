@@ -45,6 +45,15 @@ class XLoginApi /*{{{*/
 	} /*}}}*/
 
 	/**
+	 * REST callback to check permission for general admin operations.
+	 * @return boolean
+	 */
+	public static function checkPermAdmin() /*{{{*/
+	{
+		return current_user_can('manage_options');
+	} /*}}}*/
+
+	/**
 	 * REST callback to check permission to create items.
 	 * @return boolean
 	 */
@@ -227,6 +236,43 @@ class XLoginApi /*{{{*/
 		}
 		list($type, $name) = $pieces;
 		return null;
+	} /*}}}*/
+
+	/**
+	 * Perform a miscellaneous admin operation.
+	 * @param string $op Operation to perform.
+	 * @param array $params Parameters for the operation.
+	 * @return array|WP_Error Operation result, or WP_Error.
+	 */
+	public function performAdminOp($op, $params) /*{{{*/
+	{
+		$result = [];
+		$SUCCESS =& $result['success'];
+		$ERR_MSG =& $result['err_msg'];
+
+		switch ($op) {
+		case 'check-guest':
+			$guestLogin = $params['login'] ?? null;
+			if ($guestLogin == '')
+				return new WP_Error('input-invalid', 'Missing guest login.');
+			$guestUser = static::lookupWpUser($guestLogin);
+			if (!$guestUser) {
+				$SUCCESS = false;
+				$ERR_MSG = 'Invalid guest login.';
+				break;
+			}
+			if ($SUCCESS = $this->xlogin->isAcceptableGuest($guestUser, $emsg))
+				$result['login'] = $guestUser->user_login;
+			else
+				$ERR_MSG = $emsg;
+			break;
+		default:
+			return new WP_Error(
+				'input-invalid',
+				"Unknown admin operation '$op'."
+			);
+		}
+		return $result;
 	} /*}}}*/
 
 	/**

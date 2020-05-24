@@ -106,8 +106,19 @@ add_filter('authenticate', function($user, $name, $pass) use($CTX) /*{{{*/ {
 	if ($auth == '')
 		return $user;
 
-	if ($auth != '')
-		return $xlogin->getAuthenticated($auth, $name, $clear=true) ?? $user;
+	if ($xu = $xlogin->getAuthenticated($auth, $name, $clear=true, $guest)) {
+		if ($guest) {
+			// Guest is not allowed to access admin page, so replace
+			// use site URL if login redirect looks like the admin
+			// page so that user does not get an error page.
+			add_filter('login_redirect', function($url) {
+				if (strpos($url, admin_url()) == 0)
+					return site_url();
+				return $url;
+			});
+		}
+		return $xu;
+	}
 	return $user;
 } /*}}}*/, 10, 3);
 

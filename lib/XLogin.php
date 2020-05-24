@@ -62,7 +62,8 @@ use Throwable;
  * supported. A WordPress user may register multiple 'external
  * aliases' (email addresses). It is thus possible to allow multiple
  * users to share the same WordPress account without shared knowledge
- * of the WordPress password.
+ * of the WordPress password. A 'guest' user may be configured as
+ * wildcard for no-match situation.
  *
  * For privacy consideration, external aliases are stored in the
  * database as hashes. The hash includes WordPress AUTH_SALT, and
@@ -77,6 +78,23 @@ class XLogin /*{{{*/
 
 	/** @var string Facebook Graph API version to request. */
 	public static $FACEBOOK_GRAPH_API_VERS = 'v3.3';
+
+	/** @var array Capabilities that a guest user must not have. */
+	public static $GUEST_USER_FORBIDDEN_CAPS = [
+		// TODO: configurable via settings
+		'edit_posts',           // c.f. anyone above 'subscriber'
+		'delete_posts',         // c.f. 'contributor' or above
+		'publish_posts',        // c.f. 'author' or above
+		'edit_pages',           // c.f. 'editor' or above
+		'manage_options',       // c.f. 'administrator' or above
+	];
+
+	/** @var array Capabilities to disable for guest user. */
+	public static $GUEST_USER_DISABLED_CAPS = [
+		// TODO: configurable via settings
+		'read',                 // access to dashboard and profile
+		'edit_user',            // profile update (via REST API)
+	];
 
 	/** @var array External login service instances by name. */
 	private static $INSTANCES;
@@ -451,11 +469,18 @@ class XLogin /*{{{*/
 	 * @param string $type Authentication type, e.g. 'google'.
 	 * @param string $name External auth user name if known.
 	 * @param boolean $clear Clear external auth from session.
+	 * @param boolean &$guest Tell if authenticated user is a guest.
 	 * @return WP_User|WP_Error|NULL Null if no external user.
 	 */
-	public function getAuthenticated($type, $name=null, $clear=false) /*{{{*/
+	public function getAuthenticated(
+		$type,
+		$name=null,
+		$clear=false,
+		&$guest=false
+	) /*{{{*/
 	{
 		$this->logDebug("getAuthenticated(): type=$type name=$name");
+		$guest = null;
 
 		if (!($xu = $this->flowAttrGet("$type-xuser")))
 			return null;
@@ -491,6 +516,7 @@ class XLogin /*{{{*/
 			assert($user instanceof WP_User);
 			assert($xu['id'] == $user->ID);
 			$this->xu_cache[$user->ID] = $xu;
+			$guest = $xu['guest'] ?? false;
 		}
 		return $user;
 	} /*}}}*/
@@ -865,6 +891,16 @@ class XLogin /*{{{*/
 		if ($enabled && !($provider['enabled'] ?? false))
 			return null;
 
+		// Get guest login name from ID.
+		if (is_int($guest = $provider['guest'] ?? null)) {
+			if ($guest = get_user_by('ID', $guest))
+				$provider['guest'] = $guest->user_login;
+			else
+				unset($provider['guest']);
+			$this->options['providers'][$type] = $provider;
+		}
+
+		// Decrypt auth config.
 		if ($config = $provider['config'] ?? null) {
 			if (!is_array($config))
 				$config = json_decode($config, true);
@@ -1023,13 +1059,15 @@ class XLogin /*{{{*/
 	 * @internal This updates various WordPress global variables to reflect
 	 * external user information, and is thus sensitive to WordPress version.
 	 *
+	 * @param boolean &$guest Flag to indicate if imported user is guest.
 	 * @return boolean True if import is done.
 	 */
-	public function importXUser() /*{{{*/
+	public function importXUser(&$guest=false) /*{{{*/
 	{
 		global $current_user;
 		global $userdata, $user_ID, $user_identity, $user_email;
 
+		$guest = null;
 		if (!($xu = $this->getXUserInfo($user_ID)))
 			return false;
 
@@ -1055,6 +1093,21 @@ class XLogin /*{{{*/
 				= $userdata->user_email
 				= $user_email
 				= $xu['email'];
+		$guest = $xu['guest'] ?? false;
+
+		// Tighten access control for guests.
+		if ($guest) {
+			// Disable capabilities for guest.
+			add_filter('user_has_cap', function($allcaps, $caps, $args) {
+				$disabled = static::$GUEST_USER_DISABLED_CAPS;
+				if (!$disabled)
+					return $allcaps;
+				$wanted = $args[0];
+				if ($allcaps[$wanted] ?? true && in_array($wanted, $disabled))
+					$allcaps[$wanted] = false;
+				return $allcaps;
+			}, 10, 3);
+		}
 
 		return true;
 	} /*}}}*/
@@ -1161,6 +1214,37 @@ class XLogin /*{{{*/
 	} /*}}}*/
 
 	/**
+	 * Check if a WP user is acceptable as guest via external login.
+	 *
+	 * A guest user is one authenticated by an external login service
+	 * but with an alias not recognized, and should have minimal
+	 * privilege. Generally want 'subscriber' level, but role is
+	 * fully customizable in WP, so check for some capabilities.
+	 *
+	 * @param WP_User $user User to check.
+	 * @param string &$emsg Error message if not acceptable.
+	 * @return boolean True if user acceptable as guest.
+	 */
+	public function isAcceptableGuest($user, &$emsg=null) /*{{{*/
+	{
+		$emsg = null;
+
+		if (!$user instanceof WP_User) {
+			$emsg = 'Invalid user.';
+			return false;
+		}
+
+		foreach (static::$GUEST_USER_FORBIDDEN_CAPS ?? [] as $forbid) {
+			if ($user->has_cap($forbid)) {
+				$emsg = 'User is too privileged to be guest login.';
+				return false;
+			}
+		}
+
+		return true;
+	} /*}}}*/
+
+	/**
 	 * Receive credential from external login service.
 	 * @param string $type Login type, e.g. 'google'.
 	 * @param array $input Input data, e.g. $_GET.
@@ -1248,6 +1332,18 @@ class XLogin /*{{{*/
 			: get_user_by('email', $email);
 		if (!$user)
 			$user = $this->resolveXUserByAlias('email', $email);
+
+		// Attempt guest user if no specific one matched.
+		$guest = null;
+		if (!$user && !empty($config['guest'])) {
+			if ($guest = get_user_by('login', $config['guest'])) {
+				if ($this->isAcceptableGuest($guest))
+					$user = $guest;
+				else
+					$guest = null;
+			}
+		}
+
 		if (!$user) {
 			$this->setError(
 				'unknown-user',
@@ -1262,6 +1358,8 @@ class XLogin /*{{{*/
 
 		$xu['id'] = $user->ID;
 		$xu['xtype'] = $type;
+		if ($guest)
+			$xu['guest'] = true;
 		if (!$this->flowAttrSet("$type-xuser", $xu))
 			return null;
 
@@ -1617,6 +1715,13 @@ class XLogin /*{{{*/
 					}
 					if ($provider['override'] ?? false) {
 						$slot['override'] = true;
+					}
+
+					$guest = $provider['guest'] ?? null;
+					if (is_string($guest) && $guest != '') {
+						$guest = get_user_by('login', $guest);
+						if ($guest && $this->isAcceptableGuest($guest))
+							$slot['guest'] = $guest->ID;
 					}
 
 					if ($raw = $provider['config'] ?? false) {

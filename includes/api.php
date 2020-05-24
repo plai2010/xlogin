@@ -52,6 +52,36 @@ add_action('rest_api_init', function() use($CTX) /*{{{*/ {
 	]);
 	// }}}
 	//--------------------------------------------------------------
+	// Miscellaneous admin API. {{{
+	//
+	register_rest_route($namespace, '/admin', [
+		'methods' => 'POST',
+		'callback' => function($req) use($xapi) {
+			$op = $req->get_param('op');
+			$params = $req->get_param('params');
+			$result = $xapi->performAdminOp($op, $params);
+			return XLoginApi::checkError($result) ?? [
+				'result' => $result,
+			];
+		},
+		'args' => [
+			'op' => [
+				'required' => true,
+				'validate_callback' => function($op) {
+					return is_string($op);
+				},
+			],
+			'params' => [
+				'required' => false,
+				'validate_callback' => function($params) {
+					return is_array($params);
+				},
+			],
+		],
+		'permission_callback' => 'PL2010\WordPress\XLoginApi::checkPermAdmin',
+	]);
+	// }}}
+	//--------------------------------------------------------------
 	// Get list of external services. {{{
 	//
 	register_rest_route($namespace, '/xsvcs', [
