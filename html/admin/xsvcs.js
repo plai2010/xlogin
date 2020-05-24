@@ -16,6 +16,15 @@ jQuery(document).ready(function() {
 			svc: null,
 			xsvcs: []
 		},
+		created() {
+			window.addEventListener('keyup', e => {
+				if (!this.svc)
+					return;
+				if (e.key == 'Escape') {
+					this.svc = null;
+				}
+			});
+		},
 		mounted() {
 			pl2010_XLoginApi.get('/xsvcs').done(resp => {
 				let xslist = resp.data;

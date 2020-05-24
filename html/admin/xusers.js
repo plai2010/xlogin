@@ -46,6 +46,16 @@ jQuery(document).ready(function() {
 			},
 			xusers: []
 		},
+		created() {
+			window.addEventListener('keyup', e => {
+				if (!this.modal.add && !this.modal.upload)
+					return;
+				if (e.key == 'Escape') {
+					this.modal.add = false;
+					this.modal.upload = false;
+				}
+			});
+		},
 		mounted() {
 			this.loadXUsers();
 		},

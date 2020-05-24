@@ -15,6 +15,15 @@ jQuery(document).ready(function() {
 		data: {
 			cust: null
 		},
+		created() {
+			window.addEventListener('keyup', e => {
+				if (!this.cust)
+					return;
+				if (e.key == 'Escape') {
+					this.cust = null;
+				}
+			});
+		},
 		methods: {
 			/**
 			 * Load customization configuration for editing.
@@ -24,6 +33,7 @@ jQuery(document).ready(function() {
 					this.cust = resp.data || {}
 				});
 			},
+
 			saveCust() {
 				pl2010_XLoginApi.post('/customize', {
 					data: this.cust
