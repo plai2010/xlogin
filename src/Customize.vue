@@ -1,52 +1,48 @@
-/**
- * Javascript for external login customization.
+<!--
+ * XLogin customization component.
  * Author: Patrick Lai
  *
- * @todo Localization of text.
+ * @todo Localization.
  * @copyright Copyright (c) 2020 Patrick Lai
- */
-var pl2010_XLoginApi;
+-->
+<script>
+import xloginApi from './XLoginApi.js';
 
-jQuery(document).ready(function() {
-	const idXloginCustomize = 'pl2010-xlogin-customize';
-
-	new Vue({
-		el: '#' + idXloginCustomize,
-		data: {
-			cust: null
-		},
-		created() {
-			window.addEventListener('keyup', e => {
-				if (!this.cust)
-					return;
-				if (e.key == 'Escape') {
-					this.cust = null;
-				}
+export default {
+	data: () => ({
+		cust: null
+	}),
+	created() {
+		window.addEventListener('keyup', e => {
+			if (!this.cust)
+				return;
+			if (e.key == 'Escape') {
+				this.cust = null;
+			}
+		});
+	},
+	methods: {
+		/**
+		 * Load customization configuration for editing.
+		 */
+		loadCust() {
+			xloginApi.get('/customize').done(resp => {
+				this.cust = resp.data || {}
 			});
 		},
-		methods: {
-			/**
-			 * Load customization configuration for editing.
-			 */
-			loadCust() {
-				pl2010_XLoginApi.get('/customize').done(resp => {
-					this.cust = resp.data || {}
-				});
-			},
 
-			saveCust() {
-				pl2010_XLoginApi.post('/customize', {
-					data: this.cust
-				}).done(resp => {
-					if (resp.data) {
-						alert('Customization updated.');
-						this.cust = resp.data || {};
-					}
-				});
-			}
+		saveCust() {
+			xloginApi.post('/customize', {
+				data: this.cust
+			}).done(resp => {
+				if (resp.data) {
+					alert('Customization updated.');
+					this.cust = resp.data || {};
+				}
+			});
 		}
-	});
-});
+	}
+}
+</script>
 
-//----------------------------------------------------------------------
-// vim: set ts=4 noexpandtab fdm=marker syntax=javascript: ('zR' to unfold all)
+<!-- vim: set ts=4 noexpandtab fdm=marker syntax=html: ('zR' to unfold all) -->
