@@ -22,10 +22,13 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 */
  
 	// Load various JS libraries.
-	// TODO: configurable Vue.js loading?
 	wp_enqueue_script('wp-api');
 	wp_enqueue_script('jquery');
-	wp_enqueue_script('vue', "{$pluginUrl}/js/vue-2.6.11.js");
+
+	wp_enqueue_script('pl2010_xlogin_settings', "{$pluginUrl}js/settings.js", [
+		'jquery',
+		'wp-api',
+	], null);
 
 	wp_enqueue_style(
 		'pl2010-xlogin',
@@ -40,15 +43,8 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 		'pl2010-xlogin-xsvcs',
 		__('External Login Services', 'pl2010'),
 		function($args) {
-			$admin = __DIR__."/../html/admin";
-			echo file_get_contents("{$admin}/xsvcs.html");
-			?>
-			<script type="text/javascript">
-			<?php
-			echo file_get_contents("{$admin}/xsvcs.js");
-			?>
-			</script>
-			<?php
+			echo '<pl2010-xlogin-xsvcs id="pl2010-xlogin-xsvcs">';
+			echo '</pl2010-xlogin-xsvcs>';
 		},
 		'pl2010-xlogin'
 	);
@@ -60,15 +56,8 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 		'pl2010-xlogin-xusers',
 		__('External Aliases', 'pl2010'),
 		function($args) {
-			$admin = __DIR__."/../html/admin";
-			echo file_get_contents("{$admin}/xusers.html");
-			?>
-			<script type="text/javascript">
-			<?php
-			echo file_get_contents("{$admin}/xusers.js");
-			?>
-			</script>
-			<?php
+			echo '<pl2010-xlogin-xusers id="pl2010-xlogin-xusers">';
+			echo '</pl2010-xlogin-xusers>';
 		},
 		'pl2010-xlogin'
 	);
@@ -80,15 +69,8 @@ add_action('admin_init', function() use($CTX) /*{{{*/ {
 		'pl2010-xlogin-customize',
 		__('Customization', 'pl2010'),
 		function($args) {
-			$admin = __DIR__."/../html/admin";
-			echo file_get_contents("{$admin}/customize.html");
-			?>
-			<script type="text/javascript">
-			<?php
-			echo file_get_contents("{$admin}/customize.js");
-			?>
-			</script>
-			<?php
+			echo '<pl2010-xlogin-customize id="pl2010-xlogin-customize">';
+			echo '</pl2010-xlogin-customize>';
 		},
 		'pl2010-xlogin'
 	);
@@ -127,13 +109,6 @@ add_action('admin_menu', function() use($CTX) /*{{{*/ {
 			<div class="wrap">
 				<h1><?php esc_html_e(get_admin_page_title()); ?></h1>
 				<?php
-				$admin = __DIR__."/../html/admin";
-				?>
-				<script type="text/javascript">
-				<?php echo file_get_contents("{$admin}/helpers.js"); ?>
-				</script>
-				<?php
-				echo file_get_contents("{$admin}/templates.html");
 				do_settings_sections('pl2010-xlogin');
 				?>
 			</div>

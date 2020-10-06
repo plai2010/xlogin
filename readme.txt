@@ -2,7 +2,7 @@
 Contributors: scoop082110
 Tags: login, oauth, google, yahoo, facebook
 Requires at least: 5.3
-Tested up to: 5.4
+Tested up to: 5.5.1
 Stable tag: 1.1
 Requires PHP: 7.0
 License: GPLv2 or later
@@ -186,7 +186,9 @@ additional OAuth2 based login service as long as a compatible
 == Changelog ==
 
 = 1.1.0 (post-1.1 dev) =
-* Miscellaneous bug fixes and enhancements.
+* Facebook Graph API version may be specified in customization settings.
+* Admin page built with Vue.js components that are bundled by webpack.js.
+* Miscellaneous bug fixes.
 
 = 1.1 =
 * Custom message to display with external login buttons.
