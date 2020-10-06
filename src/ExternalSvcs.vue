@@ -1,14 +1,15 @@
 <!--
- * External login services admin.
+ * Vue component external login services admin.
  * Author: Patrick Lai
  *
- * @todo Localization.
+ * @todo Localization of text.
  * @copyright Copyright (c) 2020 Patrick Lai
 -->
-<div id="pl2010-xlogin-xsvcs">
+<template>
+<div>
 	<!-- Modal dialog to configure external service. {{{-->
 	<pl2010-modal v-if="svc" @close="svc=null">
-		<h3 slot="title">Configure Login Service: {{svc.name}}</h3>
+		<span slot="title">Configure Login Service: {{svc.name}}</span>
 		<div slot="body">
 			<hr>
 			<table>
@@ -102,7 +103,6 @@
 			>Update</button>
 		</div>
 	</pl2010-modal> <!--}}}-->
-
 	<p>
 	Configure:
 	<template v-for="x in xsvcs">
@@ -114,5 +114,6 @@
 	</template>
 	</p>
 </div>
+</template>
 
 <!-- vim: set ts=4 noexpandtab fdm=marker syntax=html: ('zR' to unfold all) -->

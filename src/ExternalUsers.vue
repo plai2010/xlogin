@@ -1,14 +1,15 @@
 <!--
- * External users admin.
+ * Vue component external users admin.
  * Author: Patrick Lai
  *
- * @todo Localization.
+ * @todo Localization of text.
  * @copyright Copyright (c) 2020 Patrick Lai
 -->
-<div id="pl2010-xlogin-xusers">
+<template>
+<div>
 	<!-- Modal dialog to add/update external user. {{{-->
 	<pl2010-modal v-if="modal.add" @close="modal.add=false">
-		<h3 slot="title">Add/Update External Alias</h3>
+		<span slot="title">Add/Update External Alias</span>
 		<div slot="body">
 			<hr>
 			<table>
@@ -56,7 +57,7 @@
 
 	<!-- Modal dialog to upload external users file. {{{-->
 	<pl2010-modal v-if="modal.upload" @close="modal.upload=false">
-		<h3 slot="title">Upload External Aliases</h3>
+		<span slot="title">Upload External Aliases</span>
 		<div slot="body">
 			<hr>
 			<p>Upload a CSV file with these fields:</p>
@@ -218,5 +219,6 @@
 	</table>
 	<!--}}}-->
 </div>
+</template>
 
 <!-- vim: set ts=4 noexpandtab fdm=marker syntax=html: ('zR' to unfold all) -->

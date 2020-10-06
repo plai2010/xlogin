@@ -1,11 +1,12 @@
 <!--
- * External login customization.
+ * XLogin customization component.
  * Author: Patrick Lai
  *
  * @todo Localization.
  * @copyright Copyright (c) 2020 Patrick Lai
 -->
-<div id="pl2010-xlogin-customize">
+<template>
+<div>
 	<!-- Modal dialog to customize. {{{-->
 	<pl2010-modal v-if="cust !== null" @close="cust=null">
 		<span slot="title">Customization</span>
@@ -34,10 +35,10 @@
 			<button type="button" @click="saveCust()">Update</button>
 		</div>
 	</pl2010-modal> <!--}}}-->
-
 	<p>
 	<button type="button" @click="loadCust()">Configure</button>
 	</p>
 </div>
+</template>
 
 <!-- vim: set ts=4 noexpandtab fdm=marker syntax=html: ('zR' to unfold all) -->
