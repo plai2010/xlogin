@@ -109,12 +109,12 @@ add_filter('authenticate', function($user, $name, $pass) use($CTX) /*{{{*/ {
 	if ($xu = $xlogin->getAuthenticated($auth, $name, $clear=true, $guest)) {
 		if ($guest) {
 			// Guest is not allowed to access admin page, so replace
-			// use site URL if login redirect looks like the admin
-			// page so that user does not get an error page.
+			// use site URL if login redirect looks like an admin page
+			// so that user does not get an error page.
 			add_filter('login_redirect', function($url) {
-				$redir = parse_url($url, PHP_URL_PATH);
-				$admin = parse_url(admin_url(), PHP_URL_PATH);
-				if (untrailingslashit($redir) == untrailingslashit($admin))
+				$redir = trailingslashit(parse_url($url, PHP_URL_PATH));
+				$admin = trailingslashit(parse_url(admin_url(), PHP_URL_PATH));
+				if (strpos($redir, $admin) === 0)
 					return site_url();
 				return $url;
 			});
