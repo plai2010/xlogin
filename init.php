@@ -2,7 +2,7 @@
 /**
  * Plugin Name: XLogin
  * Description: Login using external auth mechanisms.
- * Version: 1.1.0
+ * Version: 1.1.2
  * Author: Patrick Lai
  *
  * @copyright Copyright (c) 2019,2020 Patrick Lai

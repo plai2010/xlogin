@@ -74,7 +74,7 @@ use Throwable;
 class XLogin /*{{{*/
 {
 	/** Version number. */
-	const VERSION = '1.0';
+	const VERSION = '1.1.2';
 
 	/** @var string Default Facebook Graph API version to request. */
 	public static $FACEBOOK_GRAPH_API_VERS = 'v3.3';
