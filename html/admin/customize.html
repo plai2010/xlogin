@@ -8,7 +8,7 @@
 <div id="pl2010-xlogin-customize">
 	<!-- Modal dialog to customize. {{{-->
 	<pl2010-modal v-if="cust !== null" @close="cust=null">
-		<h3 slot="title">Customization</h3>
+		<span slot="title">Customization</span>
 		<div slot="body">
 			<hr>
 			<table>
@@ -16,6 +16,14 @@
 				<td>Info after login buttons:</td>
 				<td>
 					<input type="text" v-model="cust.login_buttons_info">
+				</td>
+			</tr>
+			<tr>
+				<td>Facebook Graph API version:</td>
+				<td>
+					<input type="text" v-model="cust.facebook_graph_api"
+						placeholder="E.g. v3.3"
+					>
 				</td>
 			</tr>
 			</table>

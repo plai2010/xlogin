@@ -76,7 +76,7 @@ class XLogin /*{{{*/
 	/** Version number. */
 	const VERSION = '1.0';
 
-	/** @var string Facebook Graph API version to request. */
+	/** @var string Default Facebook Graph API version to request. */
 	public static $FACEBOOK_GRAPH_API_VERS = 'v3.3';
 
 	/** @var array Capabilities that a guest user must not have. */
@@ -787,7 +787,9 @@ class XLogin /*{{{*/
 
 		switch ($type) {
 		case 'facebook':
-			$options['graphApiVersion'] = static::$FACEBOOK_GRAPH_API_VERS;
+			$cust = $this->getCustomization();
+			$options['graphApiVersion'] =
+				$cust['facebook_graph_api'] ?? static::$FACEBOOK_GRAPH_API_VERS;
 			$provider = new Facebook($options);
 			break;
 		case 'google':
@@ -1687,6 +1689,22 @@ class XLogin /*{{{*/
 					try {
 						$val = strval($val);
 						$data['customize'][$key] = sanitize_text_field($val);
+					}
+					catch (Throwable $err) {
+						$this->logDebug("invalid customization '$key' value");
+					}
+					break;
+				case 'facebook_graph_api':
+					try {
+						$val = trim(strval($val));
+						if ($val == '')
+							break;
+						if (!preg_match('%^v[1-9][0-9]*\.[0-9]$%', $val))
+							throw new WP_Error(
+								'input-invalid',
+								"Invalid Facebook Graph API version '$val'."
+							);
+						$data['customize'][$key] = $val;
 					}
 					catch (Throwable $err) {
 						$this->logDebug("invalid customization '$key' value");
