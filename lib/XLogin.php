@@ -1786,8 +1786,7 @@ class XLogin /*{{{*/
 		$options['customize'] = $data;
 		$options = $this->sanitizeOptions($options);
 
-		if (!update_option($this->getOptionsName(), $options))
-			return new WP_Error('server_error', 'Failed to save option.');
+		update_option($this->getOptionsName(), $options);
 
 		// Reload options.
 		$this->getOptions($cache=false);
@@ -1840,8 +1839,7 @@ class XLogin /*{{{*/
 		$options['providers'][$type] = $data;
 		$options = $this->sanitizeOptions($options);
 
-		if (!update_option($this->getOptionsName(), $options))
-			return new WP_Error('server_error', 'Failed to save option.');
+		update_option($this->getOptionsName(), $options);
 
 		// Reload options.
 		$this->getOptions($cache=false);
