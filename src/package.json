@@ -2,6 +2,7 @@
   "name": "xlogin-admin",
   "version": "1.0.0",
   "description": "Admin for WordPress plugin XLogin.",
+  "license": "GPL-2.0+",
   "scripts": {
     "build": "webpack",
     "dev": "webpack --mode development",
@@ -9,12 +10,12 @@
   },
   "keywords": [],
   "author": "Patrick Lai",
-  "license": "GPL",
   "devDependencies": {
-    "vue": "^2.6.12",
-    "vue-loader": "^15.9.3",
-    "vue-template-compiler": "^2.6.12",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12"
-  }
+    "vue": "^2.6.13",
+    "vue-loader": "^15.9.7",
+    "vue-template-compiler": "^2.6.13",
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.0"
+  },
+  "dependencies": {}
 }

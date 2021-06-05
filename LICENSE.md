@@ -51,7 +51,7 @@ This program includes various thirdparty software components:
   - license: vendor/ralouphie/getallheaders/LICENSE
 
 * Vue.js
-  - https://cdn.jsdelivr.net/npm/vue@2.6.12
+  - https://cdn.jsdelivr.net/npm/vue@2.6.13
   - license: MIT License
 
 Some image files are also incorporated:

@@ -2,7 +2,7 @@
 Contributors: scoop082110
 Tags: login, oauth, google, yahoo, facebook
 Requires at least: 5.3
-Tested up to: 5.5.1
+Tested up to: 5.7.2
 Stable tag: 1.1.2
 Requires PHP: 7.0
 License: GPLv2 or later
@@ -102,8 +102,8 @@ index.php script. For Apache that would mean rewrite rules in
 
 = Does this work with WordPress version X? =
 
-This plugin was originally developed on WordPress 5.3. It works on 5.3
-and 5.4, but has not been tried on any other version.
+This plugin was originally developed with WordPress 5.3. It has been
+tested to various extent up to 5.7.
 
 = Does this work with PHP 5.x? =
 
